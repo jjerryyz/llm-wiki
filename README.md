@@ -112,10 +112,11 @@ The skill exposes four operations, each invoked as a slash command:
 | Command | Description |
 |---------|-------------|
 | `llm-wiki init [dir]` | Initialize a new wiki vault |
-| `llm-wiki search <query>` | BM25 keyword search (+ DB9 vector search if configured) |
+| `llm-wiki search <query>` | BM25 keyword search (+ DB9/SQLite vector search if configured) |
 | `llm-wiki graph [--json]` | Analyze wikilink graph: communities, hubs, orphans, wanted pages |
 | `llm-wiki status` | Wiki statistics and health summary |
-| `llm-wiki sync [--dry-run]` | Track changes (mtime + SHA256), sync embeddings to DB9 |
+| `llm-wiki sync [--dry-run]` | Track changes (mtime + SHA256), sync embeddings to DB9 or SQLite |
+| `llm-wiki embed <slug> \| --all \| --stale` | Build or refresh the local SQLite embedding index |
 | `llm-wiki skill install` | Install all skills to your AI agent workspace |
 | `llm-wiki skill list` | List available skills |
 | `llm-wiki skill show <name>` | Print skill content to stdout |
@@ -124,7 +125,7 @@ The skill exposes four operations, each invoked as a slash command:
 
 **BM25 keyword search** with CJK bigram tokenization (Chinese/Japanese/Korean support).
 
-When DB9 is configured, search becomes **hybrid**: BM25 + vector similarity, merged via Reciprocal Rank Fusion (RRF, K=60).
+When DB9 or SQLite is configured, search becomes **hybrid**: BM25 + vector similarity, merged via Reciprocal Rank Fusion (RRF, K=60).
 
 ```bash
 llm-wiki search "distributed consensus"
@@ -146,7 +147,9 @@ llm-wiki graph          # Human-readable output
 llm-wiki graph --json   # Machine-readable for programmatic use
 ```
 
-## DB9 Integration (Optional)
+## Vector Search Backends (Optional)
+
+### DB9
 
 [DB9](https://db9.ai) adds vector search and cloud sync:
 
@@ -162,6 +165,35 @@ url = "your-db9-connection-string"
 ```
 
 Then run `llm-wiki sync` to upload embeddings.
+
+### SQLite
+
+SQLite gives you a local embedding index with no external database server:
+
+- Embeddings are generated client-side and stored as float32 blobs in SQLite
+- `llm-wiki sync` keeps the index in sync with wiki file changes
+- `llm-wiki embed --all` / `--stale` mirrors the explicit re-embed workflow
+
+Enable by adding to `.llm-wiki/config.toml`:
+
+```toml
+[sqlite]
+path = ".llm-wiki/wiki.sqlite"
+embeddingModel = "text-embedding-3-small"
+chunkStrategy = "section"
+
+# Optional if not set in environment
+# openaiApiKey = "sk-..."
+# openaiBaseUrl = "https://api.openai.com/v1"
+```
+
+Then run one of:
+
+```bash
+llm-wiki sync
+llm-wiki embed --stale
+llm-wiki search "distributed consensus"
+```
 
 ## Obsidian Compatibility
 
@@ -182,6 +214,12 @@ language = "en"
 # Optional: DB9 for vector search + cloud sync
 # [db9]
 # url = "your-db9-connection-string"
+
+# Optional: local SQLite embedding index
+# [sqlite]
+# path = ".llm-wiki/wiki.sqlite"
+# embeddingModel = "text-embedding-3-small"
+# chunkStrategy = "section"
 ```
 
 ## Tech Stack
@@ -190,6 +228,7 @@ language = "en"
 - [Commander.js](https://github.com/tj/commander.js/) — CLI framework
 - [gray-matter](https://github.com/jonschlinkert/gray-matter) — Frontmatter parsing
 - [pg](https://node-postgres.com/) — PostgreSQL client (for DB9)
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) — Local SQLite backend
 - [tsup](https://tsup.egoist.dev/) — Build
 - [Vitest](https://vitest.dev/) — Testing
 

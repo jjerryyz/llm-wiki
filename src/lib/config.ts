@@ -10,6 +10,13 @@ export interface WikiConfig {
   db9?: {
     url: string;
   };
+  sqlite?: {
+    path: string;
+    embeddingModel?: string;
+    openaiApiKey?: string;
+    openaiBaseUrl?: string;
+    chunkStrategy?: 'page' | 'section' | 'paragraph';
+  };
 }
 
 const DEFAULT_CONFIG: WikiConfig = {

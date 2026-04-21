@@ -3,11 +3,11 @@ import { mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { requireVaultRoot, vaultPaths, loadConfig } from '../lib/config.js';
 import { computeSync, loadSyncState, saveSyncState, updateSyncState, contentHash } from '../lib/sync.js';
-import { createDB9Client } from '../lib/db9.js';
 import { parseWikiPage } from '../lib/wiki.js';
+import { createVectorClient, vectorBackendName } from '../lib/vector-store.js';
 
 export const syncCommand = new Command('sync')
-  .description('Track changes and update sync state (mtime + content hash). Syncs embeddings to DB9 if configured.')
+  .description('Track changes and update sync state (mtime + content hash). Syncs embeddings if a vector backend is configured.')
   .option('--dry-run', 'show changes without updating state')
   .action(async (opts: { dryRun?: boolean }) => {
     const root = requireVaultRoot();
@@ -21,6 +21,18 @@ export const syncCommand = new Command('sync')
     const result = computeSync([paths.wiki, paths.sources], root, state);
 
     const totalChanges = result.added.length + result.modified.length + result.deleted.length;
+
+    const vectorClient = createVectorClient(config, root);
+    if (vectorClient) {
+      try {
+        await vectorClient.ensureSchema();
+      } catch (err) {
+        const backend = vectorBackendName(vectorClient);
+        console.error(`${backend} initialization failed: ${err instanceof Error ? err.message : err}`);
+      } finally {
+        await vectorClient.close();
+      }
+    }
 
     if (totalChanges === 0) {
       console.log('Everything up to date.');
@@ -52,12 +64,13 @@ export const syncCommand = new Command('sync')
     saveSyncState(paths.syncState, newState);
     console.log(`\nSync state updated (${newState.lastSync})`);
 
-    // Sync to DB9 if configured
-    const db9 = createDB9Client(config);
-    if (db9) {
-      console.log('\nSyncing to DB9...');
+    // Sync embeddings if configured
+    const syncClient = createVectorClient(config, root);
+    if (syncClient) {
+      const backend = vectorBackendName(syncClient);
+      console.log(`\nSyncing embeddings to ${backend}...`);
       try {
-        await db9.ensureSchema();
+        await syncClient.ensureSchema();
 
         // Upsert added/modified wiki pages
         const wikiChanges = [...result.added, ...result.modified]
@@ -67,7 +80,7 @@ export const syncCommand = new Command('sync')
           const filePath = join(root, rel);
           const page = parseWikiPage(filePath, paths.wiki);
           const hash = contentHash(filePath);
-          await db9.upsertPage(page, hash);
+          await syncClient.upsertPage(page, hash);
           console.log(`  ↑ ${rel}`);
         }
 
@@ -75,16 +88,16 @@ export const syncCommand = new Command('sync')
         const wikiDeleted = result.deleted.filter(f => f.startsWith('wiki/'));
         for (const rel of wikiDeleted) {
           const slug = rel.replace(/^wiki\//, '').replace(/\.md$/, '');
-          await db9.deletePage(slug);
+          await syncClient.deletePage(slug);
           console.log(`  ✕ ${rel}`);
         }
 
         const syncedCount = wikiChanges.length + wikiDeleted.length;
-        console.log(`DB9 sync complete (${syncedCount} pages)`);
+        console.log(`${backend} sync complete (${syncedCount} pages)`);
       } catch (err) {
-        console.error(`DB9 sync failed: ${err instanceof Error ? err.message : err}`);
+        console.error(`${backend} sync failed: ${err instanceof Error ? err.message : err}`);
       } finally {
-        await db9.close();
+        await syncClient.close();
       }
     }
   });

@@ -17,7 +17,7 @@ Also read `wiki-agent.md` if it exists. It defines agent identity and the MUST /
 
 Never modify anything under `sources/`. Those files are immutable raw inputs; edits belong in `wiki/`.
 
-After **every** operation — ingest, query, lint, research — append a one-line entry to `wiki-log.md` and run `llm-wiki sync`. Do not skip either step, even on small changes. The log is how humans audit what happened; sync is how embeddings and DB9 stay current.
+After **every** operation — ingest, query, lint, research — append a one-line entry to `wiki-log.md` and run `llm-wiki sync`. Do not skip either step, even on small changes. The log is how humans audit what happened; sync is how embeddings and the configured vector backend stay current.
 
 ## /ingest <path>
 

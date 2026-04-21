@@ -7,5 +7,6 @@ export default defineConfig({
   outDir: 'dist',
   clean: true,
   sourcemap: true,
+  external: ['better-sqlite3', 'pg'],
   banner: { js: '#!/usr/bin/env node' },
 });

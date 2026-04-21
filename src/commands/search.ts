@@ -2,13 +2,13 @@ import { Command } from 'commander';
 import { requireVaultRoot, vaultPaths, loadConfig } from '../lib/config.js';
 import { loadWikiPages } from '../lib/wiki.js';
 import { bm25Search, rrfMerge } from '../lib/search.js';
-import { createDB9Client } from '../lib/db9.js';
+import { createVectorClient } from '../lib/vector-store.js';
 
 export const searchCommand = new Command('search')
-  .description('Search wiki pages (BM25 + DB9 vector search if configured)')
+  .description('Search wiki pages (BM25 + semantic search if configured)')
   .argument('<query>', 'search query')
   .option('-n, --limit <number>', 'max results', '10')
-  .option('--bm25-only', 'force BM25-only search even if DB9 is configured')
+  .option('--bm25-only', 'force BM25-only search even if a vector backend is configured')
   .action(async (query: string, opts: { limit: string; bm25Only?: boolean }) => {
     const root = requireVaultRoot();
     const paths = vaultPaths(root);
@@ -26,20 +26,20 @@ export const searchCommand = new Command('search')
     // BM25 search
     const bm25Results = bm25Search(pages, query, limit * 2);
 
-    // Try DB9 vector search if configured
-    const db9 = !opts.bm25Only ? createDB9Client(config) : null;
+    // Try configured vector backend if available
+    const vectorClient = !opts.bm25Only ? createVectorClient(config, root) : null;
     let vectorResults: { slug: string; score: number }[] = [];
     let hybridMode = false;
 
-    if (db9) {
+    if (vectorClient) {
       try {
-        const dbResults = await db9.vectorSearch(query, limit * 2);
+        const dbResults = await vectorClient.vectorSearch(query, limit * 2);
         vectorResults = dbResults.map(r => ({ slug: r.slug, score: r.similarity }));
         hybridMode = vectorResults.length > 0;
       } catch (err) {
-        console.error(`DB9 search failed, falling back to BM25: ${err instanceof Error ? err.message : err}`);
+        console.error(`Vector search failed, falling back to BM25: ${err instanceof Error ? err.message : err}`);
       } finally {
-        await db9.close();
+        await vectorClient.close();
       }
     }
 

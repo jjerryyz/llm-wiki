@@ -26,6 +26,7 @@ export interface DB9SearchResult {
  * Uses DB9's built-in embedding() function for server-side embeddings.
  */
 export class DB9Client {
+  readonly backend = 'db9' as const;
   private pool: any; // pg.Pool — dynamically loaded
   private url: string;
 

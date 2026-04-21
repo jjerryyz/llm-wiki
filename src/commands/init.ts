@@ -56,6 +56,11 @@ language = "en"
 
 # [db9]
 # url = "your-db9-connection-string"
+
+# [sqlite]
+# path = ".llm-wiki/wiki.sqlite"
+# embeddingModel = "text-embedding-3-small"
+# chunkStrategy = "section"
 `;
 
 const LOG_TEMPLATE = `# Change Log
@@ -171,10 +176,11 @@ detailed behavioral rules specific to this vault.
 
 ## CLI
 
-- \`llm-wiki search <query>\` — BM25 (+ vector, if DB9 configured) keyword search
+- \`llm-wiki search <query>\` — BM25 (+ vector, if DB9/SQLite configured) keyword search
 - \`llm-wiki graph\` — communities, hubs, orphans, wanted pages
 - \`llm-wiki status\` — stats + health summary
-- \`llm-wiki sync\` — track mtime/SHA256, push embeddings to DB9 if configured
+- \`llm-wiki sync\` — track mtime/SHA256, sync embeddings to DB9/SQLite if configured
+- \`llm-wiki embed\` — (SQLite) embed one page, all pages, or stale pages
 
 ## Rules
 
@@ -234,10 +240,11 @@ detailed behavioral rules specific to this vault.
 
 ## CLI
 
-- \`llm-wiki search <query>\` — BM25 (+ vector, if DB9 configured) keyword search
+- \`llm-wiki search <query>\` — BM25 (+ vector, if DB9/SQLite configured) keyword search
 - \`llm-wiki graph\` — communities, hubs, orphans, wanted pages
 - \`llm-wiki status\` — stats + health summary
-- \`llm-wiki sync\` — track mtime/SHA256, push embeddings to DB9 if configured
+- \`llm-wiki sync\` — track mtime/SHA256, sync embeddings to DB9/SQLite if configured
+- \`llm-wiki embed\` — (SQLite) embed one page, all pages, or stale pages
 
 ## Rules
 

@@ -43,9 +43,11 @@
     "toml": "^3.0.0"
   },
   "optionalDependencies": {
+    "better-sqlite3": "^12.9.0",
     "pg": "^8.20.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.20.0",
     "tsup": "^8.0.0",

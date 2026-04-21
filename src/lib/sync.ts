@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { relative } from 'node:path';
-import { listMarkdownFiles } from './wiki.js';
+import { listMarkdownFiles, toWikiPath } from './wiki.js';
 
 export interface SyncEntry {
   path: string;
@@ -52,7 +52,7 @@ export function computeSync(
 
   for (const dir of dirs) {
     for (const filePath of listMarkdownFiles(dir)) {
-      const rel = relative(baseDir, filePath);
+      const rel = toWikiPath(relative(baseDir, filePath));
       currentFiles.add(rel);
       const stat = statSync(filePath);
       const existing = state.entries[rel];
@@ -96,7 +96,7 @@ export function updateSyncState(
 
   for (const dir of dirs) {
     for (const filePath of listMarkdownFiles(dir)) {
-      const rel = relative(baseDir, filePath);
+      const rel = toWikiPath(relative(baseDir, filePath));
       const stat = statSync(filePath);
       newEntries[rel] = {
         path: rel,

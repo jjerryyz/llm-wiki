@@ -8,6 +8,7 @@ import { graphCommand } from './commands/graph.js';
 import { statusCommand } from './commands/status.js';
 import { syncCommand } from './commands/sync.js';
 import { skillCommand } from './commands/skill.js';
+import { embedCommand } from './commands/embed.js';
 
 const pkgPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
 const { version } = JSON.parse(readFileSync(pkgPath, 'utf8')) as { version: string };
@@ -24,6 +25,7 @@ program.addCommand(searchCommand);
 program.addCommand(graphCommand);
 program.addCommand(statusCommand);
 program.addCommand(syncCommand);
+program.addCommand(embedCommand);
 program.addCommand(skillCommand);
 
 program.parse();
