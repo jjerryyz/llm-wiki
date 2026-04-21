@@ -129,9 +129,10 @@ Describe the agent's role here. Example:
 
 const CLAUDE_MD_TEMPLATE = `# LLM Wiki
 
-This workspace is an LLM Wiki vault. Use the \`llm-wiki\` skill for all wiki
-operations. The full skill (operation steps, schemas, examples) lives at
-\`.claude/skills/llm-wiki.md\` and is loaded on demand by Claude Code.
+This workspace is an LLM Wiki vault. Use the bundled wiki skills for all wiki
+operations. The core playbook lives at \`.claude/skills/brain-ops/SKILL.md\`,
+with operation skills such as \`/ingest\`, \`/query\`, \`/lint\`, and
+\`/research\` installed alongside it.
 
 ## Agent Identity
 
@@ -193,9 +194,10 @@ detailed behavioral rules specific to this vault.
 
 const AGENTS_MD_TEMPLATE = `# LLM Wiki
 
-This workspace is an LLM Wiki vault. Use the \`llm-wiki\` skill for all wiki
-operations. The full skill (operation steps, schemas, examples) lives at
-\`.agents/skills/llm-wiki.md\` and is loaded on demand by Codex.
+This workspace is an LLM Wiki vault. Use the bundled wiki skills for all wiki
+operations. The core playbook lives at \`.agents/skills/brain-ops/SKILL.md\`,
+with operation skills such as \`/ingest\`, \`/query\`, \`/lint\`, and
+\`/research\` installed alongside it.
 
 ## Agent Identity
 
@@ -277,8 +279,8 @@ export const initCommand = new Command('init')
     // Install skills first (before vault marker) so a failure here leaves
     // the dir in a re-runnable state instead of half-initialized.
     // overwrite=false so a user's customized skill file is preserved.
-    const claudeSkills = installSkillsTo(paths.claudeSkillsDir, false);
-    const agentsSkills = installSkillsTo(paths.agentsSkillsDir, false);
+    const claudeSkills = installSkillsTo(paths.claudeSkillsDir, { overwrite: false });
+    const agentsSkills = installSkillsTo(paths.agentsSkillsDir, { overwrite: false });
 
     // Create files (only if they don't exist)
     const filesToCreate: [string, string][] = [
