@@ -73,7 +73,28 @@ export function listMarkdownFiles(dir: string): string[] {
 
 export function parseWikiPage(filePath: string, wikiDir: string): WikiPage {
   const raw = readFileSync(filePath, 'utf-8');
-  const { data, content } = matter(raw);
+  const hasFrontmatter = /^---[ \t]*(?:\r?\n|$)/.test(raw);
+  if (hasFrontmatter) {
+    const openingLineEnd = raw.indexOf('\n');
+    const afterOpening = openingLineEnd === -1 ? '' : raw.slice(openingLineEnd + 1);
+    if (!/^---[ \t]*\r?$/m.test(afterOpening)) {
+      throw new Error(`Failed to parse frontmatter in "${filePath}": missing closing delimiter`);
+    }
+  }
+
+  let parsed: ReturnType<typeof matter>;
+  try {
+    parsed = matter(raw);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to parse frontmatter in "${filePath}": ${detail}`, {
+      cause: error,
+    });
+  }
+  const { data, content } = parsed;
+  if (hasFrontmatter && normalizeScalar(data.title) === undefined) {
+    throw new Error(`Invalid frontmatter in "${filePath}": missing required "title" field`);
+  }
   const stat = statSync(filePath);
   const rel = toWikiPath(relative(wikiDir, filePath));
   const slug = rel.replace(/\.md$/, '');

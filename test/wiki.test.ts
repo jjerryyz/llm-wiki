@@ -49,6 +49,44 @@ See [[raft]] and [[paxos]].
     expect(page.aliases).toEqual(['consensus', 'true']);
     expect(page.wikilinks).toEqual(['raft', 'paxos']);
   });
+
+  it('includes the file path when frontmatter is malformed', () => {
+    const wikiDir = mkdtempSync(join(tmpdir(), 'llm-wiki-parse-'));
+    tempDirs.push(wikiDir);
+
+    const filePath = join(wikiDir, 'malformed.md');
+    writeFileSync(filePath, `---
+title: Malformed Page
+
+# Missing closing delimiter
+
+This body is incorrectly parsed as YAML.
+
+## Another heading
+`);
+
+    expect(() => parseWikiPage(filePath, wikiDir)).toThrow(
+      `Failed to parse frontmatter in "${filePath}"`,
+    );
+  });
+
+  it('rejects a Markdown heading used in place of the title field', () => {
+    const wikiDir = mkdtempSync(join(tmpdir(), 'llm-wiki-parse-'));
+    tempDirs.push(wikiDir);
+
+    const filePath = join(wikiDir, 'heading-title.md');
+    writeFileSync(filePath, `---
+## title: Heading Instead of YAML
+tags: [invalid]
+---
+
+# Page
+`);
+
+    expect(() => parseWikiPage(filePath, wikiDir)).toThrow(
+      `Invalid frontmatter in "${filePath}": missing required "title" field`,
+    );
+  });
 });
 import { describe, it, expect } from 'vitest';
 import { extractWikilinks, toWikiPath } from '../src/lib/wiki.js';
